@@ -1,8 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
-const {auth} = require('../midleware/auth');
-//const ROLE = require('../role');
+const {auth, authRole} = require('../midleware/auth');
+const ROLE = require('../role');
+
+router.get('/users',auth,authRole(ROLE.ADMIN),async(req,res) => {
+    try {
+        const users = await User.find({});
+        res.send(users);
+    } catch(e) {
+        res.status(500).send();
+    }
+})
 
 router.post('/user',async(req,res) => {
     const user = new User(req.body);
@@ -12,6 +21,16 @@ router.post('/user',async(req,res) => {
         res.status(201).send({user,token});
     } catch(e) {
         res.status(400).send(e);
+    }
+})
+
+router.post('/users',auth,authRole(ROLE.ADMIN),async(req,res) => {
+    const user = new User(req.body);
+    try {
+        await user.save();
+        res.status(201).send(user);
+    } catch(e) {
+        res.status(400);
     }
 })
 
@@ -73,6 +92,22 @@ router.get('/user/:id',async(req,res) => {
     }
 })
 
+router.patch('/users/:id',auth,authRole(ROLE.ADMIN),async(req,res) => {
+    const update = Object.keys(req.body);
+    const updatedAllowed = ["name","email","password","address","phone","fullname"];
+    const isValidOperation = update.every(update => updatedAllowed.includes(update));
+    if(!isValidOperation) return res.status(400).send({error:'Invalid update'});
+    try {
+        //const user = await User.findById(req.params.id);
+        
+        const user = await User.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});
+        if(!user) return res.status(404).send();
+        res.send(req.user);
+    } catch(e) {
+        res.status(400).send();
+    }
+})
+
 router.patch('/user/me',auth,async(req,res) => {
     const update = Object.keys(req.body);
     const updatedAllowed = ["name","email","password","address","phone","fullname"];
@@ -94,6 +129,15 @@ router.delete('/user/me',auth,async(req,res) => {
     try {
         await req.user.remove();
         res.send(req.user)
+    } catch(e) {
+        res.status(500).send();
+    }
+})
+
+router.delete('/users/:id',auth,authRole(ROLE.ADMIN),async(req,res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        res.status(200).send(user);
     } catch(e) {
         res.status(500).send();
     }

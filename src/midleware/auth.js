@@ -17,4 +17,11 @@ const auth = async(req,res,next) => {
     }
 }
 
-module.exports = {auth};
+function authRole(role) {
+    return (req,res,next) => {
+        if(req.user.role!==role) return res.status(401).send("You not allowed!");
+        next();
+    }
+}
+
+module.exports = {auth,authRole};

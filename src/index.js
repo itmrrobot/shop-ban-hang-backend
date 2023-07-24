@@ -19,6 +19,6 @@ app.use(categoryRouter);
 app.use(orderRouter);
 
 app.listen(process.env.PORT,() => {
-    console.log('Server started on port 4000');
+    console.log('Server started on port 3000');
 })
 
